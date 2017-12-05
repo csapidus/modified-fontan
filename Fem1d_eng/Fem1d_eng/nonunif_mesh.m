@@ -1,0 +1,65 @@
+function [coord,nvert,flag] = nonunif_mesh(Omega,hmesh,flag)
+%   
+% nonunif_mesh  Non uniform grid with grid-space given in hmesh. 
+%
+%   [coord,nvert] = nonunif_mesh(Omega,hmesh) returns in the
+%    1 x nvert array the coordinates of the nodes of the mesh
+%    for the domain [Omega(1),Omega(2)]. 
+
+ 
+%   Saleri Fausto, 1999.
+%   $Revision: 1.1.1.1 $ $Date: 2001/03/09 08:22:48 $
+%   Veneziani Alessandro, 2000
+%   Inserimento in FEM1D
+%   $Revision 2.0$ 2000/03/15
+if flag < 0
+   coord=[]; nvert=0;
+   return; 
+end
+if Omega(1) >= Omega(2)
+   gest_errori(2);
+   flag=-1; coord=[]; nvert=0;
+   return;
+end
+
+coord=[Omega(1),Omega(2)]; nvert=2; isx=1; idx=2;
+
+while idx > isx
+
+%  calcola il passo hsx con cui avanzare, sul nodo di sinistra,
+%  nella porzione di dominio ancora 
+%  da reticolare (coord(isx)-coord(idx))
+  
+   x   = coord(isx);
+   hsx = eval(hmesh);
+   if hsx < eps*1.e03      
+      es=sprintf(['The step-size of the grid should be positive']);
+      disp(es); flag=-1; coord=[]; nvert=0;
+      break;      
+   end
+    
+% calcola il potenziale nuovo  nodo
+  
+   newcoord = coord(isx) + hsx;
+   
+% se il nuovo nodo e' nelle vicinanze dell'estremo destro
+%  dell'intervallo ancora da reticolare, ho finito 
+  
+   if newcoord > (coord(idx)-hsx*0.5)
+      idx=isx;
+      
+%    
+% altrimenti, inserisco il nuovo nodo nella reticolazione e 
+% aggiorno gli indici
+% 
+
+   else
+      coord=[coord(1:isx),newcoord,coord(idx:nvert)];
+      
+      isx=isx+1;
+      idx=idx+1;
+      nvert=nvert+1;
+   end
+end
+
+return

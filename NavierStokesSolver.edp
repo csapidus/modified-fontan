@@ -1,0 +1,263 @@
+//Unsteady Stokes problem for a TCPC
+// UNITS
+// grams, seconds, millimiters
+
+load "msh3"
+//load "iovtk"
+load "medit"
+load "gmsh"
+cout<<"hello"<<endl;
+
+mesh3 Th = gmshload3("./constructive-geometry/bypass-with-cone-exampleCoarse.msh");
+real rho = 1.06*0.001; // Density (g/mm^3)
+real mu = 0.0035; // Dynamic viscosity (g/mm.s)
+real nu = mu/rho; // Kinematic viscosity
+real pl = 992.0; //min pressure in (Th,30)
+real pr = 985.0; //min pressure in (Th,35)
+real pi = 1013.9; // min pressure in (Th,20) and (Th,25)
+int rup = 9.5; //radii
+int rdw = 15.0;
+fespace Uh(Th,P2);
+Uh ux,uy,uz,vx,vy,vz,uxlast,uylast,uzlast;
+fespace Ph(Th,P1);
+Ph p,q;
+real xdw = -3.;
+real xup = -3.;
+
+// Files with pressures
+// measures sampled every 0.0001 seconds
+real dtsampling = 0.0001;
+real Thb = 0.536; // heart beat duration in a child
+int nsamples = 5360; // number of samples we readreal[int,int] Pinf(nsamples,2);
+real[int,int] Pinf(nsamples,2);
+real[int,int] Pleft(nsamples,2);
+real[int,int] Pright(nsamples,2);
+ifstream Inlet("./datasets/Inlet.txt");
+ifstream Left("./datasets/Left.txt");
+ifstream Right("./datasets/Right.txt");
+
+
+for (int i = 0; i< nsamples; i++)
+{
+ for (int j=0; j<=1; j++)
+ {
+   Inlet >> Pinf(i,j);   Right >> Pright(i,j);   Left >> Pleft(i,j);
+ }
+  cout << Pinf(i,0) << " " << Pinf(i,1) << endl;
+  cout << Pleft(i,0) << " " << Pleft(i,1) << endl;
+  cout << Pright(i,0) << " " << Pright(i,1) << endl;
+//   cout << time << comma << inletP[i] << endl;
+//   Prf >> time >> comma >> rightP[i] >> endl;
+//   Plf >> time >> comma >> leftP[i] >> endl;
+//
+}
+
+pl=Pleft(0,1);
+pr=Pright(0,1);
+pi=Pinf(0,1);
+
+
+//func uup=-1000*(rup^2 - ((x-xup)^2+z^2));
+//func udw=1000*(rdw^2 - ((x-xdw)^2+z^2));
+//func pex=pi-(pi-po)*z/L;
+
+problem stokes([ux,uy,uz,p],[vx,vy,vz,q]) =
+  int3d(Th) ( nu * ( dx(ux)*dx(vx) + dy(ux)*dy(vx) + dz(ux)*dz(vx) + //
+		     dx(uy)*dx(vy) + dy(uy)*dy(vy) + dz(uy)*dz(vy) + // \int_{Th}\grad(u):\grad{v}
+		     dx(uz)*dx(vz) + dy(uz)*dy(vz) + dz(uz)*dz(vz) ) )  //
+   - int3d(Th) ( p*(dx(vx) + dy(vy) + dz(vz)))
+  + int3d(Th) ( q*( dx(ux)+dy(uy)+dz(uz) ) )
+//the pressure condition on our outlet
++ int2d(Th,30)(pl*N.x*vx+pl*N.y*vy+pl*N.z*vz)
++ int2d(Th,35)(pr*N.x*vx+pr*N.y*vy+pr*N.z*vz)
++ int2d(Th,20)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
++ int2d(Th,25)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
+//+ int2d(Th,25)((ux*N.x+uy*N.y+uz*N.z)*(N.x*vx+N.y*vy+N.z*vz))
+//the dirichlet condition for the inflow
+//+ on(20,ux=0.0,uy=uup,uz=0.0)
+//+ on(25,ux=0.0,uy=udw,uz=0.0)
++ on(10,ux=0.0,uy=0.0,uz=0.0);
+
+cout << "Initializing with stokes... " << endl;
+stokes;
+cout << "done!" << endl;
+
+
+//real inletP [nsamples];
+//real rightP [nsamples];
+//real leftP [nsamples];
+//real time;
+//string comma;
+
+//ifstream Pinf("./Replicating Dataset/Inlet.csv");
+//ifstream Prf("./Replicating Dataset/Right.csv");
+//ifstream Plf("./Replicating Dataset/Left.csv");
+
+//for (i = 0; i< nsamples; i++)
+//{
+//   Pinf >> time >> comma >> inletP[i] >> endl;
+//   cout << time << comma << inletP[i] << endl;
+//   Prf >> time >> comma >> rightP[i] >> endl;
+//   Plf >> time >> comma >> leftP[i] >> endl;
+//
+//}
+
+
+//File path and name for your vtk output.
+ofstream kout("TCPC0.vtk");
+ /********************************************************************
+  	This is the vtk file exporter! Do NOT touch this!!!!!
+  ********************************************************************/
+
+
+  Uh[int] uh(3);
+  uh[0] = x;
+  uh[1] = y;
+  uh[2] = z;
+
+
+  {
+  int nvertices = Th.nv;
+  int nelements = Th.nt;
+  int size = Uh.ndof;
+  {
+
+
+
+
+  /*----------------------------------------------------------------------------------------------------------------------------------------------
+  													HEADER
+  ----------------------------------------------------------------------------------------------------------------------------------------------*/
+
+  	kout << "# vtk DataFile Version 2.0 "<< endl;
+  	kout << "output.vtk, Created by Freefem++, via gregorio" << "\n";
+  	kout << "ASCII" << endl;
+  	kout << "DATASET UNSTRUCTURED_GRID" << endl;
+
+
+  /*----------------------------------------------------------------------------------------------------------------------------------------------
+  														POINTS
+  ----------------------------------------------------------------------------------------------------------------------------------------------*/
+
+  	kout << "POINTS " << size << " double" << endl;
+  	for ( int i = 0; i < size; i++)
+  	{
+  		real Thx = uh[0][][i];
+  		real Thy = uh[1][][i];
+  		real Thz = uh[2][][i];
+  		kout << Thx  << " " << Thy << " " << Thz << endl;
+  	}
+  	kout << endl;
+
+
+  /*----------------------------------------------------------------------------------------------------------------------------------------------
+  														CELLS
+  ----------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+  	kout << "CELLS " << nelements << " "<< 5*nelements << endl;
+
+  	for( int i = 0;i<nelements; i++) // cciclo sui triangoli
+  		{
+  			kout << 4 << " "; //sono tre i valori da salvare
+  			for(int j = 0; j<4;j++) // 3---> since are triangle
+  			{
+  				kout << Uh(i,j) << " ";
+  			}
+  			kout << endl;
+  		}
+  	kout << endl;
+
+
+  	/*----------------------------------------------------------------------------------------------------------------------------------------------
+  														CELLS TYPES
+  ----------------------------------------------------------------------------------------------------------------------------------------------*/
+
+  	kout << "CELL_TYPES " << nelements << endl;
+  	for(int i=0;i<nelements;i++)
+  	{
+  		kout << "10 ";
+  	}
+
+  	kout << endl;
+
+
+
+  	/*----------------------------------------------------------------------------------------------------------------------------------------------
+  														POINTS DATA
+  ----------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+
+  	kout << "POINT_DATA " << size << endl;
+  	kout << " "<< endl;
+  	int narray = 2;
+  	string[int] name(narray);
+  	name[0] = "velocity" ;
+  	name[1] = "pressure" ;
+  	kout << "FIELD " << "FieldData " << narray << endl;
+  	for (int h = 0; h<narray; h++)
+  	{
+
+  		if (h==0)
+  		{
+  			kout << name[h] << " 3 " << size <<" double" << endl;
+  			for (int i =0; i< size ;i++)
+  			{
+  				real Thx = uh[0][][i];
+  				real Thy = uh[1][][i];
+  				real Thz = uh[2][][i];
+  				kout << ux(Thx,Thy,Thz) << " " << uy(Thx,Thy,Thz) <<" "<< uz(Thx,Thy,Thz) << endl;
+  			}
+  		}
+  		else
+  		{
+  			kout << endl;
+  			kout << name[h] << " 1 " << size <<" double" << endl;
+  			for (int i =0; i< size ;i++)
+  			{
+  				real Thx = uh[0][][i];
+  				real Thy = uh[1][][i];
+  				real Thz = uh[2][][i];
+  				kout << p(Thx,Thy,Thz) <<  endl;
+  			}
+  		}
+
+  	}
+
+  }
+
+  }
+
+
+real dt=dtsampling;
+real dti=1./dt;
+real nmax=5360;
+real t;
+uxlast[] = ux[];
+uylast[] = uy[];
+uzlast[] = uz[];
+
+/*
+problem SINavierStokes ([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-10) =
+       int3d(Th)(dti*ux*vx + dti*uy*vy + dti*uz*vz )
+     + int3d(Th)(nu* ( dx(ux)*dx(vx) + dy(ux)*dy(vx) +dz(ux)*dz(vx)
+       + dx(uy)*dx(vy) + dy(uy)*dy(vy) + dz(uy)*(vy)
+       + dx(uz)*dx(vz) + dy(uz)*dy(vz) + dz(uz)*dz(vz) ))
+     + int3d(Th)(uxlast*dx(ux)*vx + uxlast*dx(uy)*vy+ uxlast*dx(uz)*vz+
+       uylast*dy(ux)*vx + uylast*dy(uy)*vy +uylast*dy(uz)*vz+
+       uzlast*dz(ux)*vx +uzlast*dz(uy)*vy +uzlast*dz(uz)*vz)
+     - int3d(Th)(p*dx(vx) + p*dy(vy) + p*dz(vz))
+     - int3d(Th)(dx(ux)*q + dy(uy)*q + dz(uz)*q)
+     - int3d(Th)(dti*uxlast*vx + dti*uylast*vy + dti*uzlast*vz)
+     //the pressure condition on our outlet
+     + int2d(Th,30)(po*N.x*vx+po*N.y*vy+po*N.z*vz)
+     //the dirichlet condition for the inflow
+     //+ int2d(Th,20)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
+     + on(20,ux=0,uy=0,uz=uzex)
+     + on(10,ux=0,uy=0,uz=0);
+   for (int i=0;i<nmax;i++)
+   {t=dt*i; SINavierStokes;
+    uxlast=ux; uylast=uy; uzlast=uz;}
+
+*/

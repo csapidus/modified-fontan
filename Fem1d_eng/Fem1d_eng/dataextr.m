@@ -1,0 +1,48 @@
+function [nu,beta,sigma,f,flag]=dataextr(stringa)
+%
+%DATAEXTR     Data extractor.
+%    [NU,BETA,SIGMA,F] = DATAEXTR(STRINGA) stores in the specific
+%   macro the coefficients of an elliptic linear one-dimensional
+%   problem. In STRINGA the coefficients should be separate using
+%   an = and a ,. 
+%
+%   For example, if STRINGA='viscosity=1.e-03, convective field=1,
+%   reaction term = 1+x^2, f=sin(x)+5', then DATAEXTR return
+%   NU='1.e-03', BETA='1', SIGMA='1+x^2', F='sin(x)+5'. 
+%    The order of arguments is essential (viscosity, convective
+%   field, reactive term, load force). 
+%
+%   See also FEM1D.
+%
+ 
+%   Saleri Fausto, 1999 + Veneziani Alessandro
+%   March 2000
+%
+ku=[]; kv=[];
+for i=1:length(stringa)
+   if stringa(i) == '='
+     if stringa(i+1)~='='& stringa(i+1)~='<' & stringa(i+1)~='>'
+      if stringa(i-1)~='='& stringa(i-1)~='<' & stringa(i-1)~='>'
+         ku=[ku,i];
+      end
+     end 
+   end   
+   if stringa(i) == ','
+      kv=[kv,i]; 
+   end 
+end
+length(ku);
+length(kv);
+if length(ku) ~= 4 | length(kv) ~= 3
+   disp('Incorrect number of coefficients')
+   flag = -1;
+   return
+end
+
+nu    = stringa(1+ku(1):kv(1)-1);
+beta  = stringa(1+ku(2):kv(2)-1);
+sigma = stringa(1+ku(3):kv(3)-1);
+f     = stringa(1+ku(4):length(stringa));
+flag  = 0;
+
+return

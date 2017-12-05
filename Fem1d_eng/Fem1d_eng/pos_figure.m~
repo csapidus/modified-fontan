@@ -1,0 +1,25 @@
+function [figurePos]=pos_figure
+%
+%POS_FIGURE position of a figure.
+%   
+
+%   Fausto Saleri, Alessandro Veneziani
+%   $Revision: 1.1.1.1 $  $Date: 2001/03/09 08:22:48 $
+RootUnits = get(0,'Units');
+set(0,'Units','points');
+figurePos=get(0,'DefaultFigurePosition');
+figurePos(3:4)=[420 315];
+figurePos(1:2) = figurePos(1:2)*72/96;
+%
+% Controlla che il titolo non sia fuori dallo schermo e lo sistema
+rootScreenSize = get(0,'ScreenSize');
+if ((figurePos(1) < 1) | ...
+      (figurePos(1)+figurePos(3) > rootScreenSize(3)))
+   figurePos(1) = 30;
+end
+set(0, 'Units', RootUnits);
+if ((figurePos(2)+figurePos(4)+60 > rootScreenSize(4)) ...
+      | (figurePos(2) < 1))
+   figurePos(2) = rootScreenSize(4) - figurePos(4) - 60;
+end
+return
