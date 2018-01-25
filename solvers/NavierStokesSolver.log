@@ -8992,8 +8992,8 @@ Initializing with stokes...
           min -0.0569385  max 0.0574303
           min 1005.36  max 1099.52
 done!
-times: compile 3.944s, execution 43.505s,  mpirank:0
- ######## We forget of deleting   239865 Nb pointer,   0Bytes  ,  mpirank 0, memory leak =0
+times: compile 4.191s, execution 82.955s,  mpirank:0
+ ######## We forget of deleting   239864 Nb pointer,   0Bytes  ,  mpirank 0, memory leak =0
  CodeAlloc : nb ptr  3591,  size :403968 mpirank: 0
 Ok: Normal End
- try getConsole C:\Users\Mahdi\AppData\Roaming\Microsoft\Windows\Network Shortcuts\College\2017-2018\Academic Research\NravierStokesSolver.edp
+ try getConsole C:\Users\Mahdi\AppData\Roaming\Microsoft\Windows\Network Shortcuts\College\2017-2018\Academic Research\skesSolverolvers\NavierStokesSolver.edp

@@ -1,0 +1,22 @@
+/////////////////////////////////////////////////////
+// Mahdi Al-Husseini                               //
+// 2.                                              //
+/////////////////////////////////////////////////////
+
+// Look into the discrete vs deterministic functions for PLAS capabilities
+
+
+A' = (A) * (498/500) + 0.14 - A
+
+// at t = 0
+A = 5
+
+// bolus experiment
+// @ 5 X = -.25
+
+// !!  X Y
+
+t0 = 0
+tf = 1000
+hr = 0.1
+

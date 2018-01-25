@@ -1,0 +1,21 @@
+/////////////////////////////////////////////////////
+// Mahdi Al-Husseini                               //
+// Testing the Tolerance to Perturbation of Cos    //
+/////////////////////////////////////////////////////
+
+
+X' = Y
+Y' = - X
+
+// at t = 0
+X = 1
+Y = 0
+
+// bolus experiment
+@ 5 X = -.25
+
+// !!  X Y
+
+t0 = 0
+tf = 20
+hr = .001
