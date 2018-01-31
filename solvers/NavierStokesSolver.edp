@@ -6,7 +6,6 @@ load "msh3"
 //load "iovtk"
 load "medit"
 load "gmsh"
-cout<<"hello"<<endl;
 
 mesh3 Th = gmshload3("../mesh/bypass-with-cone-exampleCoarse.msh");
 real rho = 1.06*0.001; // Density (g/mm^3)
@@ -104,19 +103,19 @@ cout << "done!" << endl;
 
 
 //File path and name for your vtk output.
-ofstream kout("../visualizations/TCPC02.vtk");
-include "vtkexport.edp";
+// ofstream kout("../visualizations/TCPC02.vtk");
+// include "vtkexport.edp";
 
 
-real dt=dtsampling;
-real dti=1./dt;
-real nmax=5360;
+real dt= dtsampling;
+real dti= 1./dt;
+real nmax= 5360;
 real t;
 uxlast[] = ux[];
 uylast[] = uy[];
 uzlast[] = uz[];
 
-/*
+
 problem SINavierStokes ([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-10) =
        int3d(Th)(dti*ux*vx + dti*uy*vy + dti*uz*vz )
      + int3d(Th)(nu* ( dx(ux)*dx(vx) + dy(ux)*dy(vx) +dz(ux)*dz(vx)
@@ -129,26 +128,23 @@ problem SINavierStokes ([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-10) =
      - int3d(Th)(dx(ux)*q + dy(uy)*q + dz(uz)*q)
      - int3d(Th)(dti*uxlast*vx + dti*uylast*vy + dti*uzlast*vz)
      //the pressure condition on our outlet
-     + int2d(Th,30)(po*N.x*vx+po*N.y*vy+po*N.z*vz)
+     // + int2d(Th,30)(po*N.x*vx+po*N.y*vy+po*N.z*vz)
      //the dirichlet condition for the inflow
-     //+ int2d(Th,20)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
-     + on(20,ux=0,uy=0,uz=uzex)
+     + int2d(Th,20)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
+     //+ on(20,ux=0,uy=0,uz=uzex)
      + on(10,ux=0,uy=0,uz=0);
 
-ulast = ustokes
+// ulast = ustokes
 
-   for (int i=0;i<nmax;i++)
-   {t=dt*i; SINavierStokes;
-    uxlast=ux; uylast=uy; uzlast=uz;
-     if (mod(i,10)==0)
-      {
-       namefile = "TCPC" + i + ".vtk";
-       ofstream kout(namefile);
-       include "vtkexport.edp";
-       }
-
-
-
+for (int i = 0;i<nmax;i++) {
+    t=dt*i;
+    SINavierStokes;
+    uxlast=ux;
+    uylast=uy;
+    uzlast=uz;
+    if (i % 10 == 0) {
+    string namefile = "TCPC" + i + ".vtk";
+    ofstream kout("../visualizations/testing_NS/" + namefile);
+    include "vtkexport.edp";
     }
-
-*/
+}
