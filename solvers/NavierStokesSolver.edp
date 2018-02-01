@@ -116,7 +116,7 @@ uylast[] = uy[];
 uzlast[] = uz[];
 
 
-problem SINavierStokes ([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-10) =
+problem SINavierStokes ([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-6) =
        int3d(Th)(dti*ux*vx + dti*uy*vy + dti*uz*vz )
      + int3d(Th)(nu* ( dx(ux)*dx(vx) + dy(ux)*dy(vx) +dz(ux)*dz(vx)
        + dx(uy)*dx(vy) + dy(uy)*dy(vy) + dz(uy)*(vy)
@@ -129,9 +129,13 @@ problem SINavierStokes ([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-10) =
      - int3d(Th)(dti*uxlast*vx + dti*uylast*vy + dti*uzlast*vz)
      //the pressure condition on our outlet
      // + int2d(Th,30)(po*N.x*vx+po*N.y*vy+po*N.z*vz)
-     //the dirichlet condition for the inflow
+     + int2d(Th,30)(pl*N.x*vx+pl*N.y*vy+pl*N.z*vz)
+     + int2d(Th,35)(pr*N.x*vx+pr*N.y*vy+pr*N.z*vz)
      + int2d(Th,20)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
-     //+ on(20,ux=0,uy=0,uz=uzex)
+     + int2d(Th,25)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
+     // the dirichlet condition for the inflow
+     // + int2d(Th,20)(pi*N.x*vx+pi*N.y*vy+pi*N.z*vz)
+     // + on(20,ux=0,uy=0,uz=uzex)
      + on(10,ux=0,uy=0,uz=0);
 
 // ulast = ustokes
