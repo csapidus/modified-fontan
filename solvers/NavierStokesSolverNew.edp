@@ -7,7 +7,13 @@ load "msh3"
 load "medit"
 load "gmsh"
 
-mesh3 Th = gmshload3("../mesh/bypass-with-cone-exampleFine.msh");
+string path="./";
+
+//mesh3 Th = gmshload3("../mesh/bypass-with-cone-exampleCoarse.msh");
+mesh3 Th = gmshload3(path+"bypass-with-cone-exampleCoarse.msh");
+
+verbosity = 1;
+
 real rho = 1.06; // Density (g/cm^3)
 real mu = 0.035; // Dynamic viscosity (g/cm.s)
 real nu = mu; // Kinematic viscosity
@@ -33,12 +39,15 @@ int nsamples = 5360; // number of samples we readreal[int,int] Pinf(nsamples,2);
 real[int,int] Pinf(nsamples,2);
 real[int,int] Pleft(nsamples,2);
 real[int,int] Pright(nsamples,2);
-ifstream Inlet("../datasets/updated_flows_dynescm2/inlet.txt");
-ifstream Left("../datasets/updated_flows_dynescm2/left.txt");
-ifstream Right("../datasets/updated_flows_dynescm2/right.txt");
+//ifstream Inlet("../datasets/updated_flows_dynescm2/inlet.txt");
+//ifstream Left("../datasets/updated_flows_dynescm2/left.txt");
+//ifstream Right("../datasets/updated_flows_dynescm2/right.txt");
+ifstream Inlet("Inlet.txt");
+ifstream Left("Left.txt");
+ifstream Right("Right.txt");
 
-/*
-for (int i = 0; i< nsamples; i++)
+
+/*for (int i = 0; i< nsamples; i++)
 {
  for (int j=0; j<=1; j++)
  {
@@ -57,6 +66,7 @@ for (int i = 0; i< nsamples; i++)
 //pl=Pleft(0,1);
 //pr=Pright(0,1);
 //pi=Pinf(0,1);
+
 
 //func uup=-1000*(rup^2 - ((x-xup)^2+z^2));
 //func udw=1000*(rdw^2 - ((x-xdw)^2+z^2));
@@ -82,10 +92,10 @@ problem stokes([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-6) =
 cout << "Initializing with stokes... " << endl;
 stokes;
 cout << "done!" << endl;
+    velNorm = int3d(Th)((ux)^2 + (uy)^2 + (uz)^2);
+    velNorm = sqrt(abs(velNorm));
+    upm = velNorm + vsq;
 
-velNorm = int3d(Th)((ux)^2 + (uy)^2 + (uz)^2);
-velNorm = sqrt(abs(velNorm));
-upm = velNorm + vsq;
 
 //real inletP [nsamples];
 //real rightP [nsamples];
@@ -122,45 +132,44 @@ uzlast[] = uz[];
 
 
 problem SINavierStokes ([ux,uy,uz,p],[vx,vy,vz,q],solver=GMRES,eps=1.e-6) =
-    int3d(Th)(dti*ux*vx + dti*uy*vy + dti*uz*vz )
-    + int3d(Th)(nu* ( dx(ux)*dx(vx) + dy(ux)*dy(vx) +dz(ux)*dz(vx)
-    + dx(uy)*dx(vy) + dy(uy)*dy(vy) + dz(uy)*(vy)
-    + dx(uz)*dx(vz) + dy(uz)*dy(vz) + dz(uz)*dz(vz) ))
-    + int3d(Th)(uxlast*dx(ux)*vx + uxlast*dx(uy)*vy+ uxlast*dx(uz)*vz
-    + uylast*dy(ux)*vx + uylast*dy(uy)*vy +uylast*dy(uz)*vz
-    + uzlast*dz(ux)*vx +uzlast*dz(uy)*vy +uzlast*dz(uz)*vz)
-    - int3d(Th)(p*dx(vx) + p*dy(vy) + p*dz(vz))
-    - int3d(Th)(dx(ux)*q + dy(uy)*q + dz(uz)*q)
-    - int3d(Th)(dti*uxlast*vx + dti*uylast*vy + dti*uzlast*vz)
-    // stabilization techniques
-     + int3d(Th)(delta/upm*hTriangle*uxlast*dx(ux)*uxlast*dx(vx)
-     // streamline diffusion: next 27 terms
-            + delta/upm*hTriangle*uxlast*dx(uy)*uxlast*dx(vy)
-            + delta/upm*hTriangle*uxlast*dx(uz)*uxlast*dx(vz)
-            + delta/upm*hTriangle*uxlast*dx(ux)*uylast*dy(vx)
-            + delta/upm*hTriangle*uxlast*dx(ux)*uzlast*dz(vx)
-            + delta/upm*hTriangle*uxlast*dx(uy)*uylast*dy(vy)
-            + delta/upm*hTriangle*uxlast*dx(uy)*uzlast*dz(vy)
-            + delta/upm*hTriangle*uxlast*dx(uz)*uylast*dy(vz)
-            + delta/upm*hTriangle*uxlast*dx(uz)*uzlast*dz(vz)
-            + delta/upm*hTriangle*uylast*dy(ux)*uxlast*dx(vx)
-            + delta/upm*hTriangle*uylast*dy(uy)*uxlast*dx(vy)
-            + delta/upm*hTriangle*uylast*dy(uz)*uxlast*dx(vz)
-            + delta/upm*hTriangle*uylast*dy(ux)*uylast*dy(vx)
-            + delta/upm*hTriangle*uylast*dy(ux)*uzlast*dz(vx)
-            + delta/upm*hTriangle*uylast*dy(uy)*uylast*dy(vy)
-            + delta/upm*hTriangle*uylast*dy(uy)*uzlast*dz(vy)
-            + delta/upm*hTriangle*uylast*dy(uz)*uylast*dy(vz)
-            + delta/upm*hTriangle*uylast*dy(uz)*uzlast*dz(vz)
-            + delta/upm*hTriangle*uzlast*dz(ux)*uxlast*dx(vx)
-            + delta/upm*hTriangle*uzlast*dz(uy)*uxlast*dx(vy)
-            + delta/upm*hTriangle*uzlast*dz(uz)*uxlast*dx(vz)
-            + delta/upm*hTriangle*uzlast*dz(ux)*uylast*dy(vx)
-            + delta/upm*hTriangle*uzlast*dz(ux)*uzlast*dz(vx)
-            + delta/upm*hTriangle*uzlast*dz(uy)*uylast*dy(vy)
-            + delta/upm*hTriangle*uzlast*dz(uy)*uzlast*dz(vy)
-            + delta/upm*hTriangle*uzlast*dz(uz)*uylast*dy(vz)
-            + delta/upm*hTriangle*uzlast*dz(uz)*uzlast*dz(vz))
+       int3d(Th)(dti*ux*vx + dti*uy*vy + dti*uz*vz )
+     + int3d(Th)(nu* ( dx(ux)*dx(vx) + dy(ux)*dy(vx) +dz(ux)*dz(vx)
+       + dx(uy)*dx(vy) + dy(uy)*dy(vy) + dz(uy)*(vy)
+       + dx(uz)*dx(vz) + dy(uz)*dy(vz) + dz(uz)*dz(vz) ))
+     + int3d(Th)(uxlast*dx(ux)*vx + uxlast*dx(uy)*vy+ uxlast*dx(uz)*vz+
+       uylast*dy(ux)*vx + uylast*dy(uy)*vy +uylast*dy(uz)*vz+
+       uzlast*dz(ux)*vx +uzlast*dz(uy)*vy +uzlast*dz(uz)*vz)
+     - int3d(Th)(p*dx(vx) + p*dy(vy) + p*dz(vz))
+     - int3d(Th)(dx(ux)*q + dy(uy)*q + dz(uz)*q)
+     - int3d(Th)(dti*uxlast*vx + dti*uylast*vy + dti*uzlast*vz)
+     // STABILIZATION (SD)
+       + int3d(Th)(delta/upm*hTriangle*uxlast*dx(ux)*uxlast*dx(vx)+   // streamline diffusion: next 27 terms
+              delta/upm*hTriangle*uxlast*dx(uy)*uxlast*dx(vy)+
+              delta/upm*hTriangle*uxlast*dx(uz)*uxlast*dx(vz)+
+              delta/upm*hTriangle*uxlast*dx(ux)*uylast*dy(vx)+
+              delta/upm*hTriangle*uxlast*dx(ux)*uzlast*dz(vx)+
+              delta/upm*hTriangle*uxlast*dx(uy)*uylast*dy(vy)+
+              delta/upm*hTriangle*uxlast*dx(uy)*uzlast*dz(vy)+
+            delta/upm*hTriangle*uxlast*dx(uz)*uylast*dy(vz)+
+              delta/upm*hTriangle*uxlast*dx(uz)*uzlast*dz(vz)+
+              delta/upm*hTriangle*uylast*dy(ux)*uxlast*dx(vx)+
+              delta/upm*hTriangle*uylast*dy(uy)*uxlast*dx(vy)+
+              delta/upm*hTriangle*uylast*dy(uz)*uxlast*dx(vz)+
+              delta/upm*hTriangle*uylast*dy(ux)*uylast*dy(vx)+
+              delta/upm*hTriangle*uylast*dy(ux)*uzlast*dz(vx)+
+              delta/upm*hTriangle*uylast*dy(uy)*uylast*dy(vy)+
+              delta/upm*hTriangle*uylast*dy(uy)*uzlast*dz(vy)+
+            delta/upm*hTriangle*uylast*dy(uz)*uylast*dy(vz)+
+              delta/upm*hTriangle*uylast*dy(uz)*uzlast*dz(vz)+
+              delta/upm*hTriangle*uzlast*dz(ux)*uxlast*dx(vx)+
+              delta/upm*hTriangle*uzlast*dz(uy)*uxlast*dx(vy)+
+              delta/upm*hTriangle*uzlast*dz(uz)*uxlast*dx(vz)+
+              delta/upm*hTriangle*uzlast*dz(ux)*uylast*dy(vx)+
+              delta/upm*hTriangle*uzlast*dz(ux)*uzlast*dz(vx)+
+              delta/upm*hTriangle*uzlast*dz(uy)*uylast*dy(vy)+
+              delta/upm*hTriangle*uzlast*dz(uy)*uzlast*dz(vy)+
+            delta/upm*hTriangle*uzlast*dz(uz)*uylast*dy(vz)+
+              delta/upm*hTriangle*uzlast*dz(uz)*uzlast*dz(vz))
      //the pressure condition on our outlet
      // + int2d(Th,30)(po*N.x*vx+po*N.y*vy+po*N.z*vz)
      //the dirichlet condition for the inflow
@@ -182,10 +191,10 @@ for (int i = 0; i< (nmax * 2); i++) {
     velNorm = int3d(Th)((ux)^2 + (uy)^2 + (uz)^2);
     velNorm = sqrt(abs(velNorm));
     upm = velNorm + vsq;
-
     if (i % 10 == 0 /*&& i >= nmax*/) {
     string namefile = "TCPC" + i + ".vtk";
-    ofstream kout("../visualizations/stokes_fine/" + namefile);
+    //ofstream kout(path+"../visualizations/stokes_updates/" + namefile);
+    ofstream kout(path + namefile);
     include "vtkexport.edp";
     }
 }
